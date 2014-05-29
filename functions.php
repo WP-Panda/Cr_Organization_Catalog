@@ -1,7 +1,7 @@
 <?php 
 	/**
 		* @package Cr_Organization_Catalog
-		* @version 1.0.3
+		* @version 1.0.4
 	*/
 	/*----------------------------------------------------------------------------*/
 	/*  проверка рубрики на наличие дочерних
@@ -24,6 +24,103 @@
 		
 	}
 	
+		function get_taxonomy_parents( $id, $taxonomy = 'category',$link = false, $separator = '/', $nicename = false,$visited = array() ) {
+
+            $chain = '';
+			//$out ='';
+            $parent = get_term( $id, $taxonomy );
+			$term = get_queried_object();
+			$term_id = $term->term_id;
+			
+            if ( is_wp_error( $parent ) )
+                    return $parent;
+
+            if ( $nicename )
+                    $name = $parent->slug;
+            else
+                    $name = $parent->name;
+
+            if ( $parent->parent && ( $parent->parent != $parent->term_id ) && !in_array( $parent->parent, $visited ) ) {
+                    $visited[] = $parent->parent;
+                    $chain .= get_taxonomy_parents( $parent->parent, $taxonomy, $link, $separator, $nicename, $visited );
+            }
+
+           if ( $link )
+			{
+				if ( $parent->term_id != $term_id )
+				{
+						$chain .= '<a href="' . esc_url( get_term_link( $parent,$taxonomy ) ) . '" title="' . esc_attr( sprintf( __( "View all posts in %s" ), $parent->name ) ) . '">'.$name.'</a>' . $separator;
+				}
+				else
+				{
+						$chain .= $name;
+				}
+			}
+			else
+			{
+				if ( $parent->term_id != $term_id )
+				{
+					$chain .= $name.$separator;
+				}
+				else
+				{
+					$chain .= $name;
+				}
+			}
+			
+			return $chain; 
+						
+    }
+	
+	
+		function get_taxonomy_parents_revers( $id, $taxonomy = 'category',$link = false, $separator = '/', $nicename = false,$visited = array() ) {
+
+            $chain = array();
+			$out ='';
+            $parent = get_term( $id, $taxonomy );
+			$term = get_queried_object();
+			$term_id = $term->term_id;
+			
+            if ( is_wp_error( $parent ) )
+                    return $parent;
+
+            if ( $nicename )
+                    $name = $parent->slug;
+            else
+                    $name = $parent->name;
+
+            if ( $parent->parent && ( $parent->parent != $parent->term_id ) && !in_array( $parent->parent, $visited ) ) {
+                    $visited[] = $parent->parent;
+                    $chain[] = get_taxonomy_parents_revers( $parent->parent, $taxonomy, $link, $separator, $nicename, $visited );
+            }
+
+           if ( $link )
+			{
+				if ( $parent->term_id != $term_id )
+				{
+						$chain[] = '<a href="' . esc_url( get_term_link( $parent,$taxonomy ) ) . '" title="' . esc_attr( sprintf( __( "View all posts in %s" ), $parent->name ) ) . '">'.$name.'</a>' . $separator;
+				}
+				else
+				{
+						$chain[] = $name;
+				}
+			}
+			else
+			{
+					$chain[] = $name . $separator  ;
+
+			}
+			
+		$chain = array_reverse( $chain , true );
+			
+			foreach ($chain as $key)
+			{
+				$out .= $key;
+			}
+            return $out ;
+			
+			
+    }
 	/*----------------------------------------------------------------------------*/
 	/*
 	/*----------------------------------------------------------------------------*/
@@ -74,7 +171,7 @@
 		if ( !is_front_page() )
 		{
 			$url = get_home_url();
-			$out[] = "<a href='" . $url . "' alt=''>" . __('Главная','wp_panda') . "</a> / ";  // для главной
+			$out[] = "<a href='" . $url . "' alt=''>" . __('Главная','wp_panda') . "</a> | ";  // для главной
 		}
 		
 		if( !is_search() )
@@ -83,27 +180,25 @@
 			{   
 				$parent_cat_id = $term->parent;  // получаем родительскую категорию
 				
+				
 				if( $parent_cat_id !='0' ) // если категория имеет родительские
 				{
 					$url  = get_term_link( $term->parent, 'region' );
 					$name = get_term( $term->parent, 'region' );
-					$out[] = "<a href='" . $url . "' alt=''>" . $name->name . "</a> / ";
-					
-				} 
+				}	
 				
-				if( is_tag() ) {
 					global $query_string; 
 					parse_str( $query_string ); // разбираем запрос
 					$this_category = get_term_by( 'slug', $region, 'region' ); 
 					$this_category_id = $this_category -> term_id; // ID категории по которой происходил поиск
-					$this_category_url  = get_term_link( $this_category_id , 'region' );
-					$cat_parent_id = $this_category ->parent; // ID родительской категории
-					$cat_parent_url  = get_term_link( $cat_parent_id , 'region' );
-					$cat_parent = get_term( $cat_parent_id, 'region' );
-					if( isset( $cat_parent ) ) $out[] = "<a href='" . $cat_parent_url. "' alt=''>" . $cat_parent->name . "</a> / ";
-					$out[] = "<a href='" . $this_category_url . "' alt=''>" . $this_category -> name . "</a> / ";		
-				}
-				
+					
+					$chain = get_taxonomy_parents( $this_category_id ,'region',true, ' | ');
+					
+					$out[] = $chain;
+
+	
+
+				if (is_tag() )
 				$out[] = $term ->name; // текущаяя категория
 				
 			}
@@ -113,6 +208,7 @@
 			$out[]= __('Результаты поиска по запросу - ','wp_panda') . get_search_query(); 
 		}
 		$out[] ='</div>';
+		
 		foreach ( $out as $key) echo $key ;
 		
 	}										
@@ -124,46 +220,39 @@
 		if ( is_feed() )
 		return $title;
 		
-		// Add the site name.
-		
 		$term = get_queried_object();
 		$out = array();
-		
-		
-		
-		
-	
 		
 		if( is_tax('region')  ||  is_tag() ) // если это таксономия или тэги 
 		{   
 		
-		$out[] = $term ->name; // текущаяя категория
-		
 		if( is_tag() ) {
-				global $query_string; 
-				parse_str( $query_string ); // разбираем запрос
-				$this_category = get_term_by( 'slug', $region, 'region' ); 
-				$cat_parent_id = $this_category ->parent; // ID родительской категории
-				$cat_parent = get_term( $cat_parent_id, 'region' );
-				$out[] = ' | ' . $this_category->name;	
-				$out[] = ' | ' . $cat_parent->name;	
-			}
+		$out[] = $term ->name .' | ' ; // текущаяя категория
+		}
+		global $query_string; 
+					parse_str( $query_string ); // разбираем запрос
+					$this_category = get_term_by( 'slug', $region, 'region' ); 
+					$this_category_id = $this_category -> term_id; // ID категории по которой происходил поиск
+					
+					$chain = get_taxonomy_parents_revers( $this_category_id ,'region',false, ' | ');
+					
+					$out[] = $chain;
 			
 			$parent_cat_id = $term->parent;  // получаем родительскую категорию
 			
 			if( $parent_cat_id !='0' ) // если категория имеет родительские
 			{
 				$name = get_term( $term->parent, 'region' );
-				$out[] = ' | ' . $name->name;		
+				//$out[] = ' | ' . $name->name;		
 			} 
-		}
+		} 
 		
 		if ( is_front_page() )
 		{
 			$out[] = get_bloginfo( 'description', 'display' );
 		}
 			
-		$out[] = ' | ' . get_bloginfo( 'name' );
+		$out[] = '' . get_bloginfo( 'name' );
 		$output ='';
 		foreach ( $out as $key) $output .= $key;
 		echo trim($output);

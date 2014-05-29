@@ -1,7 +1,7 @@
 <?php 
 	/**
 		* @package Cr_Organization_Catalog
-		* @version 1.0.3
+		* @version 1.0.4
 	*/
 	get_header(); 
 	
