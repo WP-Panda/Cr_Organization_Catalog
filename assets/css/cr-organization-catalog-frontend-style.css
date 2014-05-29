@@ -1,0 +1,39 @@
+	/**
+		* @package Cr_Organization_Catalog
+		* @version 1.0.3
+	*/
+ul.region-info {
+}
+li.region-info {
+    display: inline-block;
+    margin: 25px;
+}
+
+
+li.region-info a {
+    text-transform: capitalize;
+}
+.post-region {
+    position: relative;
+}
+.date-region {
+    position: absolute;
+}
+.objekt-region {
+    display: block;
+    margin-left: 80px;
+    padding-bottom: 10px;
+}
+.objekt-region-s {
+    display: block;
+    margin-left: 80px;
+    padding-bottom: 10px;
+	margin-right: 25px;
+	 float: left;
+}
+
+#cr_bred {
+    margin: 10px 0 20px;
+}
+
+.clear{clear:both;}
