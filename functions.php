@@ -100,7 +100,7 @@
 					$cat_parent_id = $this_category ->parent; // ID родительской категории
 					$cat_parent_url  = get_term_link( $cat_parent_id , 'region' );
 					$cat_parent = get_term( $cat_parent_id, 'region' );
-					$out[] = "<a href='" . $cat_parent_url. "' alt=''>" . $cat_parent->name . "</a> / ";
+					if( !isset( $cat_parent ) ) $out[] = "<a href='" . $cat_parent_url. "' alt=''>" . $cat_parent->name . "</a> / ";
 					$out[] = "<a href='" . $this_category_url . "' alt=''>" . $this_category -> name . "</a> / ";		
 				}
 				
